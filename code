@@ -1,0 +1,163 @@
+#include <iostream>
+#include <vector>
+#include <list>
+#include <queue>
+#include <chrono>
+#include <windows.h>
+
+using namespace std;
+using namespace chrono;
+
+
+void setRussianLocale() {
+    setlocale(LC_ALL, "Russian");
+}
+
+
+void printAuthor() {
+    cout << "Автор: Савенко Александр Александрович" << endl;
+    cout << "Группа: 090301-ПОВа-о25" << endl;
+}
+
+
+int solveByArray(int N, int M, bool fromFirst, int L = -1) {
+    vector<int> people(N);
+    for (int i = 0; i < N; ++i) people[i] = i + 1;
+
+    int index = 0;
+    if (!fromFirst) {
+        for (int start = 0; start < N; ++start) {
+            vector<int> temp = people;
+            int idx = start;
+            while (temp.size() > 1) {
+                idx = (idx + M - 1) % temp.size();
+                temp.erase(temp.begin() + idx);
+                if (idx == temp.size()) idx = 0;
+            }
+            if (temp[0] == L) return start + 1;
+        }
+        return -1;
+    }
+
+
+    while (people.size() > 1) {
+        index = (index + M - 1) % people.size();
+        people.erase(people.begin() + index);
+        if (index == people.size()) index = 0;
+    }
+    return people[0];
+}
+
+
+int solveByList(int N, int M, bool fromFirst, int L = -1) {
+    list<int> people;
+    for (int i = 1; i <= N; ++i) people.push_back(i);
+
+    if (!fromFirst) {
+        for (int start = 1; start <= N; ++start) {
+            list<int> temp = people;
+            auto it = temp.begin();
+            advance(it, start - 1);
+            while (temp.size() > 1) {
+                for (int k = 1; k < M; ++k) {
+                    ++it;
+                    if (it == temp.end()) it = temp.begin();
+                }
+                it = temp.erase(it);
+                if (it == temp.end()) it = temp.begin();
+            }
+            if (temp.front() == L) return start;
+        }
+        return -1;
+    }
+
+    auto it = people.begin();
+    while (people.size() > 1) {
+        for (int k = 1; k < M; ++k) {
+            ++it;
+            if (it == people.end()) it = people.begin();
+        }
+        it = people.erase(it);
+        if (it == people.end()) it = people.begin();
+    }
+    return people.front();
+}
+
+
+int solveByQueue(int N, int M, bool fromFirst, int L = -1) {
+    if (!fromFirst) {
+        for (int start = 1; start <= N; ++start) {
+            queue<int> q;
+            for (int i = start; i <= N; ++i) q.push(i);
+            for (int i = 1; i < start; ++i) q.push(i);
+
+            queue<int> temp = q;
+            while (temp.size() > 1) {
+                for (int k = 1; k < M; ++k) {
+                    temp.push(temp.front());
+                    temp.pop();
+                }
+                temp.pop();
+            }
+            if (temp.front() == L) return start;
+        }
+        return -1;
+    }
+
+    queue<int> q;
+    for (int i = 1; i <= N; ++i) q.push(i);
+    while (q.size() > 1) {
+        for (int k = 1; k < M; ++k) {
+            q.push(q.front());
+            q.pop();
+        }
+        q.pop();
+    }
+    return q.front();
+}
+
+int main() {
+    setRussianLocale();
+    printAuthor();
+
+    int N, M, L;
+    cout << "Введите N (количество человек): ";
+    cin >> N;
+    cout << "Введите M (шаг счета): ";
+    cin >> M;
+
+
+    cout << "\n\tПункт a: счет с первого человека\n";
+    cout << "Способ А (массив): " << solveByArray(N, M, true) << endl;
+    cout << "Способ Б (связанный список): " << solveByList(N, M, true) << endl;
+    cout << "Способ В (STL очередь): " << solveByQueue(N, M, true) << endl;
+
+
+    cout << "\nВведите номер оставшегося человека L: ";
+    cin >> L;
+    cout << "\n\tПункт b: поиск начального человека\n";
+    cout << "Способ А (массив): " << solveByArray(N, M, false, L) << endl;
+    cout << "Способ Б (связанный список): " << solveByList(N, M, false, L) << endl;
+    cout << "Способ В (STL очередь): " << solveByQueue(N, M, false, L) << endl;
+
+
+    cout << "\n\tСравнение производительности (N=1000, M=5)\n";
+    const int TEST_N = 1000, TEST_M = 5;
+
+    auto start = high_resolution_clock::now();
+    solveByArray(TEST_N, TEST_M, true);
+    auto end = high_resolution_clock::now();
+    cout << "Массив: " << duration_cast<milliseconds>(end - start).count() << " мс" << endl;
+
+    start = high_resolution_clock::now();
+    solveByList(TEST_N, TEST_M, true);
+    end = high_resolution_clock::now();
+    cout << "Связанный список: " << duration_cast<milliseconds>(end - start).count() << " мс" << endl;
+
+    start = high_resolution_clock::now();
+    solveByQueue(TEST_N, TEST_M, true);
+    end = high_resolution_clock::now();
+    cout << "STL очередь: " << duration_cast<milliseconds>(end - start).count() << " мс" << endl;
+
+    return 0;
+}
